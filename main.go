@@ -27,8 +27,19 @@ func main() {
 		BananaModelKey: cfg.BananaModelKey,
 		OpenAICli:      openai.NewClient(OpenAIAPIKey),
 	}
+
 	convID := "f8086bfa-959a-4b8c-8fa6-101c224ff2bc"
-	summary, err := m.summarize(context.Background(), someText)
+
+	filePath := "./audio.mp3"
+	text, err := m.transcribe(context.Background(), filePath)
+	if err != nil {
+		slog.Error("transcribe the audio", "err", err)
+		return
+	}
+
+	slog.Info("transcribed audio", "num_sym", len(text))
+
+	summary, err := m.summarize(context.Background(), text)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "summarize"))
 	}

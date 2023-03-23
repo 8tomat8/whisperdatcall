@@ -17,9 +17,18 @@ type magic struct {
 	OpenAICli      *openai.Client
 }
 
-func (h magic) transcribe(audio []byte) (string, error) {
-	// TODO: implement
-	return "", nil
+func (h magic) transcribe(ctx context.Context, filePath string) (string, error) {
+	resp, err := h.OpenAICli.CreateTranscription(ctx, openai.AudioRequest{
+		Model:       openai.Whisper1,
+		FilePath:    filePath,
+		Prompt:      "",
+		Temperature: 0,
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "create transcript")
+	}
+
+	return resp.Text, nil
 }
 
 func (h magic) summarize(ctx context.Context, text string) (string, error) {
