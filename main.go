@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/kelseyhightower/envconfig"
@@ -15,7 +16,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-const OpenAIAPIKey = "lol"
+var OpenAIAPIKey = os.Getenv("OPENAI_API_KEY")
 
 func main() {
 	app := fiber.New()
@@ -45,11 +46,12 @@ func main() {
 	}
 	slog.Info("finished summarize", "summary", summary)
 
-	if err = sendDataToConnector(convID, summary); err != nil {
-		slog.Error("send data to the connector", err)
-	}
 	slog.Info("Success!")
 	return
+
+	// if err = sendDataToConnector(convID, summary); err != nil {
+	// slog.Error("send data to the connector", err)
+	// }
 	// rdb := redis.NewClient(&redis.Options{
 	// 	Addr:     "localhost:6379",
 	// 	Password: "", // no password set
@@ -61,9 +63,17 @@ func main() {
 		if id == "" {
 			return errors.New("dude, your id sucks")
 		}
-		body := c.Request().Body()
 
-		text, err := m.transcribe(body)
+		f, err := ioutil.TempFile(os.TempDir(), "")
+		if err != nil {
+			return errors.Wrap(err, "creating a temp file")
+		}
+
+		if err := c.Request().BodyWriteTo(f); err != nil {
+			return errors.Wrap(err, "save the audio")
+		}
+
+		text, err := m.transcribe(c.Context(), f.Name())
 		if err != nil {
 			return errors.Wrap(err, "transcribe")
 		}
